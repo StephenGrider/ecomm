@@ -1,7 +1,7 @@
 const Ajv = require('ajv');
 const ajvErrors = require('ajv-errors');
 
-module.exports = ajvErrors(
+const ajv = ajvErrors(
   new Ajv({
     allErrors: true,
     jsonPointers: true,
@@ -15,3 +15,5 @@ module.exports = ajvErrors(
 );
 
 ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
+
+module.exports = ajv;
