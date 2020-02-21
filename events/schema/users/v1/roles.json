@@ -1,0 +1,6 @@
+{
+  "anyOf": [
+    { "type": "string", "value": "user" },
+    { "type": "string", "value": "admin" }
+  ]
+}

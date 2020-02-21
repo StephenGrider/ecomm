@@ -1,0 +1,42 @@
+{
+  "$id": "#/properties/metadata",
+  "type": "object",
+  "title": "Metadata",
+  "description": "Metadata common to all events",
+  "required": ["type", "version", "timestamp", "id"],
+  "properties": {
+    "type": {
+      "$id": "#/properties/metadata/properties/type",
+      "type": "string",
+      "title": "The Type Schema",
+      "default": "",
+      "examples": ["user-created"],
+      "pattern": "^(.*)$"
+    },
+    "version": {
+      "$id": "#/properties/metadata/properties/version",
+      "type": "string",
+      "title": "The Version Schema",
+      "default": "",
+      "examples": ["2000-11-13T20:20:39+00:00"],
+      "pattern": "^(.*)$"
+    },
+    "timestamp": {
+      "$id": "#/properties/metadata/properties/timestamp",
+      "type": "string",
+      "format": "date-time",
+      "title": "The Timestamp Schema",
+      "default": "",
+      "examples": ["2000-01-01T00:00:00+00:00"],
+      "pattern": "^(.*)$"
+    },
+    "id": {
+      "$id": "#/properties/metadata/properties/id",
+      "type": "string",
+      "title": "The Id Schema",
+      "default": "",
+      "examples": ["6a2f41a3-c54c-fce8-32d2-0324e1c32e22"],
+      "pattern": "^(.*)$"
+    }
+  }
+}

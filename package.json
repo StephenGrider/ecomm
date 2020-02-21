@@ -1,0 +1,24 @@
+{
+  "name": "common",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ajv": "^6.11.0",
+    "ajv-errors": "^1.0.1",
+    "cookie-session": "^1.4.0",
+    "express-async-errors": "^3.1.1",
+    "express-validator": "^6.4.0",
+    "jaeger-client": "^3.17.2",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.9.1",
+    "node-nats-streaming": "^0.2.6",
+    "uuid": "^3.4.0"
+  }
+}
