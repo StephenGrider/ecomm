@@ -2,7 +2,7 @@ const {
   ValidationError,
   BadRequest,
   RequestValidationError,
-  UnauthorizedError
+  NotAuthorizedError
 } = require('../errors');
 const mongoose = require('mongoose');
 
@@ -19,7 +19,7 @@ module.exports = (err, req, res, next) => {
     return err.handleResponse(res);
   }
 
-  if (err instanceof UnauthorizedError) {
+  if (err instanceof NotAuthorizedError) {
     return err.handleResponse(res);
   }
 
