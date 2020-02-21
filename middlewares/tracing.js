@@ -1,7 +1,7 @@
 const { FORMAT_HTTP_HEADERS } = require('opentracing');
 
 module.exports = serviceName => {
-  const tracer = require('../logging/tracer')(serviceName);
+  const tracer = require('../logging/tracer');
 
   return (req, res, next) => {
     const { headers, path, url, method, body, query, params } = req;
