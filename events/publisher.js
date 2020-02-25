@@ -12,10 +12,6 @@ module.exports = class Publisher {
     return publisher.publish(data, req);
   }
 
-  constructor() {
-    this.broker = broker;
-  }
-
   getEventName() {
     if (!this.eventName) {
       throw new Error('Subclasses should assign eventName');
