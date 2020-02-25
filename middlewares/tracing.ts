@@ -1,9 +1,16 @@
-const { FORMAT_HTTP_HEADERS } = require('opentracing');
+import { Request, Response, NextFunction } from 'express';
+import { FORMAT_HTTP_HEADERS, SpanContext } from 'opentracing';
 
-module.exports = serviceName => {
-  const tracer = require('../logging/tracer');
+declare global {
+  namespace Express {
+    interface Request {
+      tracerContext: SpanContext;
+    }
+  }
+}
 
-  return (req, res, next) => {
+module.exports = () => {
+  return (req: Request, res: Response, next: NextFunction) => {
     const { headers, path, url, method, body, query, params } = req;
 
     const context = tracer.extract(FORMAT_HTTP_HEADERS, headers);
@@ -31,10 +38,11 @@ module.exports = serviceName => {
   };
 };
 
-const filterField = (obj, name) => {
-  const ret = {};
+const filterField = <T>(obj: T, name: Extract<keyof T, string>) => {
+  const ret = {} as T;
 
   for (let key in obj) {
+    //@ts-ignore
     ret[key] = key === name ? '***' : obj[key];
   }
 

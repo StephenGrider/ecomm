@@ -1,7 +1,7 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 class Client {
-  connect(url) {
+  connect(url: string) {
     return mongoose.connect(url, {
       useNewUrlParser: true,
       useUnifiedTopology: true
@@ -13,4 +13,6 @@ class Client {
   }
 }
 
-module.exports = new Client();
+const client = new Client();
+
+export { client };
