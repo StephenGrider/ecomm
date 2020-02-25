@@ -67,7 +67,7 @@ module.exports = class Handler {
     const event = JSON.parse(message.getData());
     const { errors, valid } = await this.validateData(event);
 
-    const context = tracer.extract(FORMAT_TEXT_MAP, data.context);
+    const context = tracer.extract(FORMAT_TEXT_MAP, event.context);
     const span = tracer.startSpan(this.eventName, {
       childOf: context
     });
