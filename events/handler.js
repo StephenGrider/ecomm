@@ -64,8 +64,8 @@ module.exports = class Handler {
   }
 
   async _handle(message) {
-    const data = JSON.parse(message.getData());
-    const { errors, valid } = await this.validateData(data);
+    const event = JSON.parse(message.getData());
+    const { errors, valid } = await this.validateData(event);
 
     const context = tracer.extract(FORMAT_TEXT_MAP, data.context);
     const span = tracer.startSpan(this.eventName, {
@@ -73,13 +73,13 @@ module.exports = class Handler {
     });
 
     if (!valid) {
-      span.log({ error: errors, data });
+      span.log({ error: errors, event });
       span.finish();
       throw new PublishValidationError(errors);
     }
 
     try {
-      await this.handle(data);
+      await this.handle(event);
     } catch (err) {
       span.log({ error: err });
     } finally {
