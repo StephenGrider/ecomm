@@ -2,9 +2,10 @@
   "name": "common",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -25,7 +26,6 @@
     "jaeger-client": "^3.17.2",
     "jest": "^25.1.0",
     "jsonwebtoken": "^8.5.1",
-    "mongodb-memory-server": "^6.2.4",
     "mongoose": "^5.9.1",
     "node-nats-streaming": "^0.2.6",
     "opentracing": "^0.14.4",
