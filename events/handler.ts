@@ -4,24 +4,26 @@ import { broker } from './broker';
 import { tracer } from '../logging/tracer';
 import { Event } from './schema/common/v1/event';
 
-export abstract class Handler<T> {
+export abstract class Handler<T extends Event> {
   abstract eventName: string;
   abstract eventVersion: string;
-  abstract queueGroupName: string;
-  abstract handle(event: Event<T>): any;
+  abstract queueGroupName?: string;
+  abstract handle(event: T): any;
 
   subscribe() {
     if (!broker.client) {
       throw new Error('Cannot subscribe yet, client not available');
     }
 
-    return broker.client
-      .subscribe(this.eventName, this.queueGroupName)
-      .on('message', this._handle.bind(this));
+    const subscription = this.queueGroupName
+      ? broker.client.subscribe(this.eventName, this.queueGroupName)
+      : broker.client.subscribe(this.eventName);
+
+    return subscription.on('message', this._handle.bind(this));
   }
 
   async _handle(message: Message) {
-    const event: Event<T> = JSON.parse(message.getData().toString('utf8'));
+    const event: T = JSON.parse(message.getData().toString('utf8'));
 
     const context = tracer.extract(FORMAT_TEXT_MAP, event.context);
     const span = tracer.startSpan(this.eventName, {

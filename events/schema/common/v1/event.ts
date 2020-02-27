@@ -1,7 +1,10 @@
-import { Metadata } from './metadata';
-
-export interface Event<T> {
-  metadata: Metadata;
+export interface Event {
+  metadata: {
+    type: string;
+    version: string;
+    timestamp: string;
+    id: string;
+  };
   context: any;
-  data: T;
+  data: any;
 }

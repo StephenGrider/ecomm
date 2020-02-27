@@ -5,7 +5,7 @@ import { broker } from './broker';
 import { tracer } from '../logging/tracer';
 import { Event } from './schema/common/v1/event';
 
-interface Options {
+export interface EventOptions {
   req?: Request;
 }
 
@@ -13,7 +13,7 @@ export abstract class Publisher<T> {
   abstract eventName: string;
   abstract eventVersion: string;
 
-  constructor(private data: T, private options: Options = {}) {}
+  constructor(private data: T, private options: EventOptions = {}) {}
 
   buildContext() {
     const req = this.options;
@@ -23,7 +23,7 @@ export abstract class Publisher<T> {
     }
   }
 
-  buildEvent(): Event<T> {
+  buildEvent(): Event {
     return {
       data: this.data,
       metadata: {
