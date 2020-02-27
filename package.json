@@ -15,6 +15,7 @@
     "@types/jaeger-client": "^3.15.3",
     "@types/jsonwebtoken": "^8.3.7",
     "@types/mongoose": "^5.7.1",
+    "@types/uuid": "^7.0.0",
     "ajv": "^6.11.0",
     "ajv-errors": "^1.0.1",
     "cookie-session": "^1.4.0",

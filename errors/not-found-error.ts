@@ -1,6 +1,6 @@
 import { BaseError } from './base-error';
 
-export class NotFoundError extends Error implements BaseError {
+export class NotFoundError extends BaseError {
   code = 400;
 
   handleResponse() {

@@ -3,7 +3,7 @@ export interface ErrorDescription {
   field?: string;
 }
 
-export abstract class BaseError {
+export abstract class BaseError extends Error {
   abstract handleResponse(): {
     code: number;
     errors: ErrorDescription[];

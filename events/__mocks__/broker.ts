@@ -1,9 +1,8 @@
 class MockBroker {
-  constructor() {
-    this.client = {
-      publish: jest.fn()
-    };
-  }
+  client = {
+    //@ts-ignore
+    publish: jest.fn()
+  };
 }
 
-module.exports = new MockBroker();
+export const broker = new MockBroker();

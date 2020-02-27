@@ -1,20 +1,21 @@
 import { Request, Response, NextFunction } from 'express';
-import { FORMAT_HTTP_HEADERS, SpanContext } from 'opentracing';
+import { FORMAT_HTTP_HEADERS, Span } from 'opentracing';
+import { tracer } from '../logging/tracer';
 
 declare global {
   namespace Express {
     interface Request {
-      tracerContext: SpanContext;
+      tracerContext: Span;
     }
   }
 }
 
-module.exports = () => {
+export const tracing = () => {
   return (req: Request, res: Response, next: NextFunction) => {
     const { headers, path, url, method, body, query, params } = req;
 
     const context = tracer.extract(FORMAT_HTTP_HEADERS, headers);
-    const span = tracer.startSpan(req.url, { childOf: context });
+    const span = tracer.startSpan(req.url, { childOf: context || undefined });
 
     req.tracerContext = span;
     span.setTag('http.request.url', url);

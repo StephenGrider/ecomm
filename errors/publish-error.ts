@@ -1,7 +1,6 @@
-import { Response } from 'express';
 import { BaseError } from './base-error';
 
-export class PublishError extends Error implements BaseError {
+export class PublishError extends BaseError {
   code = 500;
 
   handleResponse() {

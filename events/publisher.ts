@@ -1,85 +1,60 @@
-const uuid = require('uuid/v4');
-const ajv = require('./event-validator');
-const PublishValidationError = require('./publish-error');
-const broker = require('./broker');
-const tracer = require('../logging/tracer');
-const { FORMAT_TEXT_MAP } = require('opentracing');
+import { Request } from 'express';
+import { v4 as uuid } from 'uuid';
+import { FORMAT_TEXT_MAP, FORMAT_HTTP_HEADERS } from 'opentracing';
+import { broker } from './broker';
+import { tracer } from '../logging/tracer';
+import { Event } from './schema/common/v1/event';
 
-module.exports = class Publisher {
-  static publish(data, req) {
-    const publisher = new this();
+interface Options {
+  req?: Request;
+}
 
-    return publisher.publish(data, req);
-  }
+export abstract class Publisher<T> {
+  abstract eventName: string;
+  abstract eventVersion: string;
 
-  getEventName() {
-    if (!this.eventName) {
-      throw new Error('Subclasses should assign eventName');
+  constructor(private data: T, private options: Options = {}) {}
+
+  buildContext() {
+    const req = this.options;
+
+    if (req) {
+      return tracer.extract(FORMAT_HTTP_HEADERS, req) || undefined;
     }
-    return this.eventName;
   }
 
-  getSchema() {
-    if (!this.schema) {
-      throw new Error('Subclasses should assign schema');
-    }
-
-    return this.schema;
-  }
-
-  getEventVersion() {
-    if (!this.schema) {
-      throw new Error('Subclasses should assign eventVersion');
-    }
-
-    return this.eventVersion;
-  }
-
-  async validateData(data) {
-    await ajv.compileAsync(this.getSchema());
-
-    const valid = ajv.validate(this.getSchema(), data);
-
-    if (!valid) {
-      const { errors } = ajv;
-      ajv.errors = null;
-      return { errors, valid: false };
-    }
-
-    return { errors: [], valid: true };
-  }
-
-  buildEvent(data) {
+  buildEvent(): Event<T> {
     return {
+      data: this.data,
       metadata: {
-        type: this.getEventName(),
-        version: this.getEventVersion(),
+        type: this.eventName,
+        version: this.eventVersion,
         timestamp: new Date().toISOString(),
         id: uuid()
       },
-      data
+      context: {}
     };
   }
 
-  async publish(data, { tracerContext }) {
-    const event = this.buildEvent(data);
-
-    const { errors, valid } = await this.validateData(event);
-
-    if (!valid) {
-      throw new PublishValidationError(errors);
-    }
-
-    const span = tracer.startSpan(event.metadata.type, {
-      childOf: tracerContext
+  async publish(): Promise<void> {
+    const span = tracer.startSpan(this.eventName, {
+      childOf: this.buildContext()
     });
-    span.log({ event });
+
+    const event = this.buildEvent();
+
     event.context = {};
     tracer.inject(span, FORMAT_TEXT_MAP, event.context);
 
+    span.log({ event });
+
     return new Promise((resolve, reject) => {
+      if (!broker.client) {
+        return;
+      }
+
       broker.client.publish(
-        this.getEventName(),
+        this.eventName,
         JSON.stringify(event),
         (err, guid) => {
           if (err) {
@@ -89,9 +64,10 @@ module.exports = class Publisher {
 
           span.log({ guid });
           span.finish();
-          resolve(guid);
+
+          resolve();
         }
       );
     });
   }
-};
+}

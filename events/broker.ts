@@ -1,18 +1,36 @@
-const nats = require('node-nats-streaming');
+import nats from 'node-nats-streaming';
 
 class Broker {
-  async connect(clusterId, clientId, serverUri) {
-    return new Promise((resolve, reject) => {
-      this.client = nats.connect(clusterId, clientId, serverUri);
-      this.client.on('connect', () => {
-        process.on('SIGUSR2', () => {
-          console.log('Killing nats connection');
-          this.client.on('close', () => {
-            process.exit();
-          });
-          this.client.close();
-        });
+  private _client: nats.Stan | null = null;
 
+  get client(): nats.Stan {
+    if (!this._client) {
+      throw new Error('Attempted to access the client before it was ready');
+    }
+
+    return this._client;
+  }
+
+  onConnect() {
+    process.on('SIGUSR2', () => {
+      if (!this.client) {
+        return;
+      }
+
+      console.log('Killing nats connection');
+      this.client.on('close', () => {
+        process.exit();
+      });
+      this.client.close();
+    });
+  }
+
+  async connect(clusterId: string, clientId: string, serverUrl: string) {
+    return new Promise((resolve, reject) => {
+      this._client = nats.connect(clusterId, clientId, { url: serverUrl });
+
+      this.client.on('connect', () => {
+        this.onConnect();
         resolve();
       });
       this.client.on('connection_lost', err => {
@@ -25,4 +43,6 @@ class Broker {
   }
 }
 
-module.exports = new Broker();
+const broker = new Broker();
+
+export { broker };

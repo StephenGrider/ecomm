@@ -1,6 +1,6 @@
 import { BaseError } from './base-error';
 
-export class BadRequestError extends Error implements BaseError {
+export class BadRequestError extends BaseError {
   code = 400;
 
   handleResponse() {

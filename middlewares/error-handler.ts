@@ -7,7 +7,7 @@ import {
   NotFoundError
 } from '../errors';
 
-module.exports = (
+export const errorHandler = (
   err: Error,
   req: Request,
   res: Response,

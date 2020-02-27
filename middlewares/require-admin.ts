@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { NotAuthorizedError } from '../errors';
 
-export const RequireAdmin = async (
+export const requireAdmin = async (
   req: Request,
   res: Response,
   next: NextFunction

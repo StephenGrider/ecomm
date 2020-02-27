@@ -15,7 +15,7 @@ declare global {
   }
 }
 
-export const currentUser = async (
+export const currentUser = (JWT_KEY: string) => async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -28,13 +28,8 @@ export const currentUser = async (
   }
 
   try {
-    if (process.env.JWT_KEY) {
-      const payload = jwt.verify(
-        req.session.jwt,
-        process.env.JWT_KEY
-      ) as UserPayload;
-      req.currentUser = payload;
-    }
+    const payload = jwt.verify(req.session.jwt, JWT_KEY) as UserPayload;
+    req.currentUser = payload;
   } catch (err) {}
 
   next();

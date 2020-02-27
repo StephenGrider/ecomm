@@ -1,7 +1,7 @@
 import { ValidationError } from 'express-validator';
 import { BaseError } from './base-error';
 
-export class RequestValidationError extends Error implements BaseError {
+export class RequestValidationError extends BaseError {
   code = 400;
 
   constructor(private errors: ValidationError[]) {

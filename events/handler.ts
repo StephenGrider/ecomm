@@ -1,82 +1,32 @@
-const broker = require('./broker');
-const ajv = require('./event-validator');
-const PublishValidationError = require('./publish-error');
-const tracer = require('../logging/tracer');
-const { FORMAT_TEXT_MAP } = require('opentracing');
+import { FORMAT_TEXT_MAP } from 'opentracing';
+import { Message } from 'node-nats-streaming';
+import { broker } from './broker';
+import { tracer } from '../logging/tracer';
+import { Event } from './schema/common/v1/event';
 
-module.exports = class Handler {
-  static handle() {
-    const handler = new this();
-    handler.listen();
+export abstract class Handler<T> {
+  abstract eventName: string;
+  abstract eventVersion: string;
+  abstract queueGroupName: string;
+  abstract handle(event: Event<T>): any;
 
-    return handler;
-  }
-
-  getEventName() {
-    if (!this.eventName) {
-      throw new Error('Subclasses should assign eventName');
-    }
-    return this.eventName;
-  }
-
-  getSchema() {
-    if (!this.schema) {
-      throw new Error('Subclasses should assign schema');
+  subscribe() {
+    if (!broker.client) {
+      throw new Error('Cannot subscribe yet, client not available');
     }
 
-    return this.schema;
-  }
-
-  getEventVersion() {
-    if (!this.eventVersion) {
-      throw new Error('Subclasses should assign eventVersion');
-    }
-
-    return this.eventVersion;
-  }
-
-  getQueueGroupName() {
-    if (!this.schema) {
-      throw new Error('Subclasses should assign queueGroupName');
-    }
-
-    return this.queueGroupName;
-  }
-
-  async validateData(data) {
-    await ajv.compileAsync(this.schema);
-
-    const valid = ajv.validate(this.schema, data);
-
-    if (!valid) {
-      const { errors } = ajv;
-      ajv.errors = null;
-      return { errors, valid: false };
-    }
-
-    return { errors: [], valid: true };
-  }
-
-  listen() {
-    broker.client
-      .subscribe(this.getEventName(), this.getQueueGroupName())
+    return broker.client
+      .subscribe(this.eventName, this.queueGroupName)
       .on('message', this._handle.bind(this));
   }
 
-  async _handle(message) {
-    const event = JSON.parse(message.getData());
-    const { errors, valid } = await this.validateData(event);
+  async _handle(message: Message) {
+    const event: Event<T> = JSON.parse(message.getData().toString('utf8'));
 
     const context = tracer.extract(FORMAT_TEXT_MAP, event.context);
     const span = tracer.startSpan(this.eventName, {
-      childOf: context
+      childOf: context || undefined
     });
-
-    if (!valid) {
-      span.log({ error: errors, event });
-      span.finish();
-      throw new PublishValidationError(errors);
-    }
 
     try {
       await this.handle(event);
@@ -86,4 +36,4 @@ module.exports = class Handler {
       span.finish();
     }
   }
-};
+}
