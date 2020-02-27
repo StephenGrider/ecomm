@@ -4,6 +4,7 @@ export * from './logging/tracer';
 export * from './middlewares';
 export * from './events/broker';
 export * from './events/handler';
+export * from './events/publisher';
 export { ProductCreatedEvent as ProductCreatedEventV1 } from './events/schema/catalog/v1/events/product-created';
 export { ProductUpdatedEvent as ProductUpdatedEventV1 } from './events/schema/catalog/v1/events/product-updated';
 export { UserCreatedEvent as UserCreatedEventV1 } from './events/schema/users/v1/events/user-created';
