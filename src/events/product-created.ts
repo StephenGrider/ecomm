@@ -1,6 +1,6 @@
 import { Event } from './event';
 
-export const eventName = 'product-created';
+export const productCreatedEventName = 'product-created';
 export interface ProductCreatedEvent extends Event {
   data: {
     id: string;
