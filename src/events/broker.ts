@@ -1,48 +1,103 @@
-import nats from 'node-nats-streaming';
+import { Request } from 'express';
+import {
+  Stan,
+  Message,
+  SubscriptionOptions as _SubscriptionOptions
+} from 'node-nats-streaming';
+import { EventEmitter } from 'events';
+import { Tracer } from 'logging/tracer';
+import { Event } from 'events/event';
 
-class Broker {
-  private _client: nats.Stan | null = null;
+interface SubscriptionOptions extends _SubscriptionOptions {
+  groupName: string;
+}
 
-  get client(): nats.Stan {
-    if (!this._client) {
-      throw new Error('Attempted to access the client before it was ready');
-    }
-
-    return this._client;
+export class Broker {
+  constructor(
+    public client: Stan,
+    public process: EventEmitter,
+    public tracer: Tracer
+  ) {
+    client.on('connection_lost', this.onClientClose);
+    client.on('error', this.closeClient);
+    process.on('SIGUSR2', this.closeClient);
   }
 
-  onConnect() {
-    process.on('SIGUSR2', () => {
-      if (!this.client) {
-        return;
-      }
+  onClientClose = (err: Error) => {
+    throw err;
+  };
 
-      console.log('Killing nats connection');
-      this.client.on('close', () => {
-        process.exit();
-      });
-      this.client.close();
+  closeClient = () => {
+    this.client.close();
+    throw new Error('Broker closed');
+  };
+
+  defaultOptions() {
+    return this.client
+      .subscriptionOptions()
+      .setStartWithLastReceived() as SubscriptionOptions;
+  }
+
+  on<T>(eventName: string, callback: (data: T, message: Message) => void): void;
+  on<T>(
+    eventName: string,
+    callback: (data: T, message: Message) => void,
+    _options?: SubscriptionOptions
+  ): void {
+    const options = _options || this.defaultOptions();
+
+    const subscription = options.groupName
+      ? this.client.subscribe(eventName, options.groupName, options)
+      : this.client.subscribe(eventName, options);
+
+    subscription.on('message', (message: Message) => {
+      const parsedData = this.parseMessage(message);
+      const span = this.tracer.spanFromEvent(parsedData);
+      span.log({ eventId: parsedData.metadata.id });
+
+      try {
+        callback(parsedData, message);
+      } catch (err) {
+        span.log({ error: err });
+      } finally {
+        span.finish();
+      }
     });
   }
 
-  async connect(clusterId: string, clientId: string, serverUrl: string) {
-    return new Promise((resolve, reject) => {
-      this._client = nats.connect(clusterId, clientId, { url: serverUrl });
+  private parseMessage(message: Message) {
+    const data = message.getData();
+    return typeof data === 'string'
+      ? JSON.parse(data)
+      : JSON.parse(data.toString('utf8'));
+  }
 
-      this.client.on('connect', () => {
-        this.onConnect();
-        resolve();
-      });
-      this.client.on('connection_lost', err => {
-        throw err;
-      });
-      this.client.on('error', err => {
-        throw err;
-      });
+  publish(event: Event, contextSource?: Request): Promise<string> {
+    const span = this.tracer.spanFromRequest(
+      event.metadata.type,
+      contextSource
+    );
+
+    this.tracer.injectEvent(span, event);
+    span.log({ event });
+
+    return new Promise((resolve, reject) => {
+      this.client.publish(
+        event.metadata.type,
+        JSON.stringify(event),
+        (err, guid) => {
+          if (err) {
+            span.log({ error: err });
+            span.finish();
+            return reject(err);
+          }
+
+          span.log({ guid });
+          span.finish();
+
+          resolve(guid);
+        }
+      );
     });
   }
 }
-
-const broker = new Broker();
-
-export { broker };

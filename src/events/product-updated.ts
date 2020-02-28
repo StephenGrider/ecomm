@@ -1,4 +1,4 @@
-import { Event } from '../../../common/v1/event';
+import { Event } from './event';
 
 export interface ProductUpdatedEvent extends Event {
   data: {
