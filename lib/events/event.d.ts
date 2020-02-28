@@ -1,7 +1,6 @@
 export interface Event {
     metadata: {
         type: string;
-        version: string;
         timestamp: string;
         id: string;
     };

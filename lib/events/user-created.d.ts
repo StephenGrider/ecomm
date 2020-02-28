@@ -1,4 +1,5 @@
-import { Event } from '../../../common/v1/event';
+import { Event } from './event';
+export declare const userCreatedEventName = "user-created";
 export interface UserCreatedEvent extends Event {
     data: {
         id: string;

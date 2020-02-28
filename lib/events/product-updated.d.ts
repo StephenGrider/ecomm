@@ -1,5 +1,6 @@
-import { Event } from '../../../common/v1/event';
-export interface ProductCreatedEvent extends Event {
+import { Event } from './event';
+export declare const productUpdatedEventName = "product-updated";
+export interface ProductUpdatedEvent extends Event {
     data: {
         id: string;
         title: string;
