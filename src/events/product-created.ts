@@ -1,7 +1,6 @@
 import { Event } from './event';
-import { Handler } from './handler';
-import { Publisher } from './publisher';
 
+export const eventName = 'product-created';
 export interface ProductCreatedEvent extends Event {
   data: {
     id: string;
@@ -12,12 +11,4 @@ export interface ProductCreatedEvent extends Event {
       raw: string;
     }[];
   };
-}
-
-export class ProductCreatedPublisher extends Publisher<ProductCreatedEvent> {
-  eventName = 'product-created';
-}
-
-export class ProductCreatedHandler extends Handler<ProductCreatedEvent> {
-  eventName = 'product-created';
 }
