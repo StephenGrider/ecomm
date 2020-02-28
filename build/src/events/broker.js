@@ -1,29 +1,35 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+var tracer_1 = require("logging/tracer");
 var Broker = /** @class */ (function () {
-    function Broker(client, process, tracer) {
+    function Broker(process, tracer) {
         var _this = this;
-        this.client = client;
-        this.process = process;
         this.tracer = tracer;
         this.onClientClose = function (err) {
             throw err;
         };
         this.closeClient = function () {
+            if (!_this.client) {
+                return;
+            }
             _this.client.close();
             throw new Error('Broker closed');
         };
-        client.on('connection_lost', this.onClientClose);
-        client.on('error', this.closeClient);
         process.on('SIGUSR2', this.closeClient);
     }
+    Broker.prototype.setClient = function (client) {
+        this.client = client;
+        client.on('connection_lost', this.onClientClose);
+        client.on('error', this.closeClient);
+    };
     Broker.prototype.defaultOptions = function () {
-        return this.client
-            .subscriptionOptions()
-            .setStartWithLastReceived();
+        return this.client.subscriptionOptions().setStartWithLastReceived();
     };
     Broker.prototype.on = function (eventName, callback, _options) {
         var _this = this;
+        if (!this.client) {
+            throw new Error('Client not available');
+        }
         var options = _options || this.defaultOptions();
         var subscription = options.groupName
             ? this.client.subscribe(eventName, options.groupName, options)
@@ -51,6 +57,9 @@ var Broker = /** @class */ (function () {
     };
     Broker.prototype.publish = function (event, contextSource) {
         var _this = this;
+        if (!this.client) {
+            throw new Error('Client not available');
+        }
         var span = this.tracer.spanFromRequest(event.metadata.type, contextSource);
         this.tracer.injectEvent(span, event);
         span.log({ event: event });
@@ -70,3 +79,4 @@ var Broker = /** @class */ (function () {
     return Broker;
 }());
 exports.Broker = Broker;
+exports.broker = new Broker(process, tracer_1.tracer);

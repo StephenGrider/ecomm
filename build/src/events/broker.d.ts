@@ -1,22 +1,19 @@
 /// <reference types="node" />
 import { Request } from 'express';
-import { Stan, Message, SubscriptionOptions as _SubscriptionOptions } from 'node-nats-streaming';
+import { Stan, Message } from 'node-nats-streaming';
 import { EventEmitter } from 'events';
 import { Tracer } from 'logging/tracer';
 import { Event } from 'events/event';
-interface SubscriptionOptions extends _SubscriptionOptions {
-    groupName: string;
-}
 export declare class Broker {
-    client: Stan;
-    process: EventEmitter;
-    tracer: Tracer;
-    constructor(client: Stan, process: EventEmitter, tracer: Tracer);
+    private tracer;
+    client?: Stan;
+    constructor(process: EventEmitter, tracer: Tracer);
+    setClient(client: Stan): void;
     onClientClose: (err: Error) => never;
-    closeClient: () => never;
-    defaultOptions(): SubscriptionOptions;
+    closeClient: () => void;
+    private defaultOptions;
     on<T>(eventName: string, callback: (data: T, message: Message) => void): void;
     private parseMessage;
     publish(event: Event, contextSource?: Request): Promise<string>;
 }
-export {};
+export declare const broker: Broker;

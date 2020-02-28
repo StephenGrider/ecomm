@@ -1,4 +1,4 @@
-import nats, { Stan, Message } from 'node-nats-streaming';
+import nats, { Message } from 'node-nats-streaming';
 import { EventEmitter } from 'events';
 import { Broker } from 'events/broker';
 import { UserCreatedEvent } from 'events/user-created';
@@ -10,11 +10,13 @@ jest.mock('logging/tracer');
 const createBroker = () => {
   const client = nats.connect('clsuterId', 'clientId', { url: 'url' });
   const _process = new EventEmitter();
+  const broker = new Broker(_process, tracer);
+  broker.setClient(client);
   return {
     tracer,
     client,
     _process,
-    broker: new Broker(client, _process, tracer)
+    broker
   };
 };
 

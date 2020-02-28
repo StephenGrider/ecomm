@@ -1,11 +1,11 @@
 import { Request } from 'express';
-import {
+import nats, {
   Stan,
   Message,
   SubscriptionOptions as _SubscriptionOptions
 } from 'node-nats-streaming';
 import { EventEmitter } from 'events';
-import { Tracer } from 'logging/tracer';
+import { tracer, Tracer } from 'logging/tracer';
 import { Event } from 'events/event';
 
 interface SubscriptionOptions extends _SubscriptionOptions {
@@ -13,14 +13,16 @@ interface SubscriptionOptions extends _SubscriptionOptions {
 }
 
 export class Broker {
-  constructor(
-    public client: Stan,
-    public process: EventEmitter,
-    public tracer: Tracer
-  ) {
+  client?: Stan;
+
+  constructor(process: EventEmitter, private tracer: Tracer) {
+    process.on('SIGUSR2', this.closeClient);
+  }
+
+  setClient(client: Stan) {
+    this.client = client;
     client.on('connection_lost', this.onClientClose);
     client.on('error', this.closeClient);
-    process.on('SIGUSR2', this.closeClient);
   }
 
   onClientClose = (err: Error) => {
@@ -28,14 +30,16 @@ export class Broker {
   };
 
   closeClient = () => {
+    if (!this.client) {
+      return;
+    }
+
     this.client.close();
     throw new Error('Broker closed');
   };
 
-  defaultOptions() {
-    return this.client
-      .subscriptionOptions()
-      .setStartWithLastReceived() as SubscriptionOptions;
+  private defaultOptions() {
+    return this.client!.subscriptionOptions().setStartWithLastReceived() as SubscriptionOptions;
   }
 
   on<T>(eventName: string, callback: (data: T, message: Message) => void): void;
@@ -44,6 +48,10 @@ export class Broker {
     callback: (data: T, message: Message) => void,
     _options?: SubscriptionOptions
   ): void {
+    if (!this.client) {
+      throw new Error('Client not available');
+    }
+
     const options = _options || this.defaultOptions();
 
     const subscription = options.groupName
@@ -73,6 +81,10 @@ export class Broker {
   }
 
   publish(event: Event, contextSource?: Request): Promise<string> {
+    if (!this.client) {
+      throw new Error('Client not available');
+    }
+
     const span = this.tracer.spanFromRequest(
       event.metadata.type,
       contextSource
@@ -82,7 +94,7 @@ export class Broker {
     span.log({ event });
 
     return new Promise((resolve, reject) => {
-      this.client.publish(
+      this.client!.publish(
         event.metadata.type,
         JSON.stringify(event),
         (err, guid) => {
@@ -101,3 +113,5 @@ export class Broker {
     });
   }
 }
+
+export const broker = new Broker(process, tracer);
